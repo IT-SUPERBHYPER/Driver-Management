@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Driver Phone Manager</title>
+    <!-- ✅ EmailJS SDK - MUST be in head -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/emailjs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #2c3e50;
+            --border-color: #ecf0f1;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, #2980b9 100%);
+            --gradient-secondary: linear-gradient(135deg, var(--secondary-color) 0%, #34495e 100%);
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gradient-primary);
+            min-height: 100vh;
+            padding: 10px;
+            transition: all 0.3s ease;
+        }
+        body.dark-mode {
+            --light-color: #2c3e50;
+            --dark-color: #ecf0f1;
+            --border-color: #34495e;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        body.dark-mode .container {
+            background: rgba(44, 62, 80, 0.95);
+            color: var(--dark-color);
+        }
+        .header {
+            background: var(--gradient-secondary);
+            color: white;
+            padding: 20px 30px;
+            position: relative;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            font-size: 2.2em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .theme-toggle {
+            background: none;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .dashboard {
+            padding: 20px 30px;
+            background: var(--light-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        body.dark-mode .stat-card {
+            background: var(--secondary-color);
+            color: var(--dark-color);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .controls-section {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 15px;
+            align-items: center;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+        }
+        .btn {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        .btn.btn-danger {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #c0392b 100%);
+        }
+        .btn.btn-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);
+        }
+        .btn.btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #229954 100%);
+        }
+        .btn.btn-secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+        .btn.btn-info {
+            background: linear-gradient(135deg, var(--info-color) 0%, #138496 100%);
+        }
+        .btn.btn-sm {
+            padding: 8px 15px;
+            font-size: 0.8em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        body.dark-mode .section {
+            background: var(--secondary-color);
+            color: var(--dark-color);
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .section h2 {
+            color: var(--secondary-color);
+            font-size: 1.4em;
+        }
+        body.dark-mode .section h2 {
+            color: var(--dark-color);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        body.dark-mode .form-group label {
+            color: var(--dark-color);
+        }
+        .form-group input, .form-group select {
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: var(--light-color);
+        }
+        body.dark-mode .form-group input, 
+        body.dark-mode .form-group select {
+            background: #34495e;
+            color: var(--dark-color);
+            border-color: #34495e;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+        }
+        .password-input-container {
+            position: relative;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        .editing-notice {
+            background: rgba(243, 156, 18, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--warning-color);
+            display: none;
+        }
+        .editing-mode {
+            border: 3px solid var(--warning-color);
+            box-shadow: 0 0 20px rgba(243, 156, 18, 0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px rgba(243, 156, 18, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(243, 156, 18, 0.3); }
+        }
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .table-filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .bulk-actions {
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+        }
+        body.dark-mode .table-container {
+            background: var(--secondary-color);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+        th {
+            background: var(--light-color);
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--secondary-color);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+        }
+        body.dark-mode th {
+            background: #34495e;
+            color: var(--dark-color);
+        }
+        td {
+            padding: 15px 10px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        tr:hover {
+            background: rgba(52, 152, 219, 0.05);
+        }
+        .editing-row {
+            background: rgba(243, 156, 18, 0.1) !important;
+            border-left: 4px solid var(--warning-color);
+        }
+        .selected-row {
+            background: rgba(39, 174, 96, 0.1) !important;
+            border-left: 4px solid var(--success-color);
+        }
+        .password-cell {
+            position: relative;
+        }
+        .password-field {
+            font-family: 'Courier New', monospace;
+            background: var(--light-color);
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        body.dark-mode .password-field {
+            background: #34495e;
+        }
+        .password-field.hidden::after {
+            content: '••••••••';
+        }
+        .password-field.hidden {
+            color: transparent;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-active {
+            background: rgba(39, 174, 96, 0.2);
+            color: var(--success-color);
+        }
+        .status-spare {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+        }
+        .status-maintenance {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--danger-color);
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .mobile-view {
+            display: none;
+        }
+        .driver-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+        body.dark-mode .driver-card {
+            background: var(--secondary-color);
+            color: var(--dark-color);
+        }
+        .driver-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .driver-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .driver-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-value {
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        body.dark-mode .modal-content {
+            background-color: var(--secondary-color);
+            color: var(--dark-color);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close:hover {
+            color: var(--danger-color);
+        }
+        .import-export-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .file-input {
+            padding: 12px;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-input:hover {
+            border-color: var(--primary-color);
+            background: rgba(52, 152, 219, 0.05);
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.error {
+            background: var(--danger-color);
+        }
+        .toast.warning {
+            background: var(--warning-color);
+        }
+        .toast.info {
+            background: var(--info-color);
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 5px;
+                border-radius: 15px;
+            }
+            .content {
+                padding: 15px;
+            }
+            .dashboard {
+                padding: 15px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .controls-section {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .desktop-view {
+                display: none;
+            }
+            .mobile-view {
+                display: block;
+            }
+            .table-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .table-filters {
+                justify-content: center;
+            }
+            .modal-content {
+                margin: 10% 5%;
+                width: 90%;
+            }
+        }
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .driver-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div>
+                    <h1>🚗 Advanced Driver Manager</h1>
+                    <p>Comprehensive driver phone and credential management system</p>
+                </div>
+                <div class="header-controls">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        🌙 Dark Mode
+                    </button>
+                    <button class="btn btn-secondary" onclick="openSettingsModal()">
+                        ⚙️ Settings
+                    </button>
+                    <button class="btn btn-info" onclick="saveToJSONBin()">
+                        🔄 Sync to Cloud
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalDrivers">0</div>
+                    <div class="stat-label">Total Drivers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeDrivers">0</div>
+                    <div class="stat-label">Active Drivers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="samsungDevices">0</div>
+                    <div class="stat-label">Samsung Devices</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="redmiDevices">0</div>
+                    <div class="stat-label">Redmi Devices</div>
+                </div>
+            </div>
+            <div class="controls-section">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search drivers by name, phone, email..." id="searchInput">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button class="btn" onclick="openImportExportModal()">
+                    📊 Import/Export
+                </button>
+                <button class="btn btn-success" onclick="toggleAddForm()">
+                    ➕ Add Driver
+                </button>
+            </div>
+        </div>
+        <div class="content">
+            <!-- Add/Edit Driver Form -->
+            <div class="section" id="driverFormSection" style="display: none;">
+                <div class="section-header">
+                    <h2 id="formTitle">Add New Driver</h2>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm()">
+                        ✕ Close
+                    </button>
+                </div>
+                <div class="editing-notice" id="editingNotice">
+                    <p style="margin: 0; color: var(--warning-color); font-weight: 600;">📝 Currently editing driver information</p>
+                </div>
+                <form id="driverForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="driverName">Driver Name</label>
+                            <input type="text" id="driverName" name="driverName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status" required>
+                                <option value="Active">Active</option>
+                                <option value="Spare">Spare</option>
+                                <option value="Maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="threecx">3CX Extension</label>
+                            <input type="text" id="threecx" name="threecx" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phoneModel">Phone Model</label>
+                            <input type="text" id="phoneModel" name="phoneModel" required placeholder="e.g., iPhone 14 Pro, Samsung Galaxy S23">
+                        </div>
+                        <div class="form-group">
+                            <label for="serialNumber">Serial/Provider Info</label>
+                            <input type="text" id="serialNumber" name="serialNumber" required placeholder="Device serial number or provider info">
+                        </div>
+                        <div class="form-group">
+                            <label for="gmailPassword">Gmail Password</label>
+                            <div class="password-input-container">
+                                <input type="password" id="gmailPassword" name="gmailPassword" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('gmailPassword')">👁️</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipdayUsername">Shipday Username</label>
+                            <input type="text" id="shipdayUsername" name="shipdayUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipdayPassword">Shipday Password</label>
+                            <div class="password-input-container">
+                                <input type="password" id="shipdayPassword" name="shipdayPassword" required>
+                                <button type="button" class="password-toggle" onclick="togglePassword('shipdayPassword')">👁️</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="notes">Additional Notes</label>
+                            <input type="text" id="notes" name="notes" placeholder="Optional notes or comments">
+                        </div>
+                        <div class="form-group">
+                            <label for="tags">Tags</label>
+                            <input type="text" id="tags" name="tags" placeholder="e.g., Route1, Priority, NewHire (comma-separated)">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <button type="submit" class="btn" id="submitBtn">Add Driver</button>
+                        <button type="button" id="cancelEdit" class="btn btn-danger" style="display: none;">Cancel Edit</button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear Form</button>
+                        <button type="button" class="btn btn-warning" onclick="duplicateDriver()" id="duplicateBtn" style="display: none;">Duplicate Driver</button>
+                    </div>
+                </form>
+            </div>
+            <!-- Drivers Table/List -->
+            <div class="section">
+                <div class="section-header">
+                    <h2>Driver Information</h2>
+                    <div class="header-controls">
+                        <button class="btn btn-secondary btn-sm" onclick="togglePasswordsVisibility()">
+                            👁️ Toggle Passwords
+                        </button>
+                    </div>
+                </div>
+                <div class="table-controls">
+                    <div class="table-filters">
+                        <select id="statusFilter" onchange="applyFilters()">
+                            <option value="">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Spare">Spare</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                        <select id="modelFilter" onchange="applyFilters()">
+                            <option value="">All Models</option>
+                            <option value="Samsung">Samsung</option>
+                            <option value="Redmi">Redmi</option>
+                            <option value="iPhone">iPhone</option>
+                        </select>
+                        <button class="btn btn-sm" onclick="clearFilters()">Clear Filters</button>
+                    </div>
+                    <div class="bulk-actions" id="bulkActions">
+                        <span id="selectedCount">0 selected</span>
+                        <button class="btn btn-warning btn-sm" onclick="bulkEdit()">Bulk Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="bulkDelete()">Delete Selected</button>
+                        <button class="btn btn-secondary btn-sm" onclick="clearSelection()">Clear Selection</button>
+                    </div>
+                </div>
+                <!-- Desktop Table View -->
+                <div class="desktop-view">
+                    <div class="table-container" id="tableContainer">
+                        <div class="no-results">
+                            <p>No drivers match your current filters. Try adjusting your search criteria.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Mobile Card View -->
+                <div class="mobile-view" id="mobileContainer">
+                    <div class="no-results">
+                        <p>No drivers found. Add your first driver using the form above.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Import/Export Modal -->
+    <div id="importExportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import/Export Data</h2>
+                <span class="close" onclick="closeModal('importExportModal')">&times;</span>
+            </div>
+            <div class="import-export-section">
+                <div>
+                    <h3>Import Data</h3>
+                    <div class="file-input" onclick="document.getElementById('csvFile').click()">
+                        📁 Click to select CSV file
+                        <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="importCSV(event)">
+                    </div>
+                    <p style="font-size: 0.9em; color: #7f8c8d; margin-top: 10px;">CSV format: Name, Status, Email, 3CX, Phone, Model, Serial, Gmail Password, Shipday User, Shipday Password, Notes, Tags</p>
+                </div>
+                <div>
+                    <h3>Export Data</h3>
+                    <button class="btn btn-success" onclick="exportCSV()">📊 Export to CSV</button>
+                    <button class="btn btn-secondary" onclick="exportJSON()">💾 Export to JSON</button>
+                    <div style="margin-top: 10px;">
+                        <label>
+                            <input type="checkbox" id="maskPasswords"> Mask passwords in export
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3>Backup & Restore</h3>
+                <button class="btn btn-warning" onclick="createBackup()">💾 Create Backup</button>
+                <button class="btn btn-info" onclick="document.getElementById('backupFile').click()">📂 Restore Backup</button>
+                <input type="file" id="backupFile" accept=".json" style="display: none;" onchange="restoreBackup(event)">
+            </div>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <span class="close" onclick="closeModal('settingsModal')">&times;</span>
+            </div>
+            <div style="display: grid; gap: 20px;">
+                <div>
+                    <h3>Display Settings</h3>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="autoSaveEnabled" checked> Enable auto-save
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                        <input type="checkbox" id="passwordsHiddenByDefault" checked> Hide passwords by default
+                    </label>
+                </div>
+                <div>
+                    <h3>Data Management</h3>
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+                    <p style="font-size: 0.9em; color: #7f8c8d; margin-top: 5px;">This action cannot be undone</p>
+                </div>
+                <div>
+                    <h3>About</h3>
+                    <p>Advanced Driver Manager v2.0</p>
+                    <p>Professional driver and device management system</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bulk Edit Modal -->
+    <div id="bulkEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Bulk Edit Drivers</h2>
+                <span class="close" onclick="closeModal('bulkEditModal')">&times;</span>
+            </div>
+            <p>Select fields to update for <span id="bulkEditCount">0</span> selected drivers:</p>
+            <form id="bulkEditForm">
+                <div style="display: grid; gap: 15px;">
+                    <label>
+                        <input type="checkbox" id="bulkUpdateStatus"> Update Status:
+                        <select id="bulkStatus" style="margin-left: 10px;">
+                            <option value="Active">Active</option>
+                            <option value="Spare">Spare</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="bulkUpdateGmailPassword"> Update Gmail Password:
+                        <input type="text" id="bulkGmailPassword" style="margin-left: 10px; width: 200px;">
+                    </label>
+                    <label>
+                        <input type="checkbox" id="bulkUpdateShipdayPassword"> Update Shipday Password:
+                        <input type="text" id="bulkShipdayPassword" style="margin-left: 10px; width: 200px;">
+                    </label>
+                    <label>
+                        <input type="checkbox" id="bulkUpdateTags"> Add Tags:
+                        <input type="text" id="bulkTags" placeholder="comma-separated tags" style="margin-left: 10px; width: 200px;">
+                    </label>
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-success" onclick="applyBulkEdit()">Apply Changes</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('bulkEditModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+    <script>
+        // Safely initialize EmailJS with retry logic
+        function initEmailJS() {
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init("Z3Si2PM1lDLbSTUz5");
+                console.log('✅ EmailJS initialized');
+            } else {
+                console.warn('EmailJS not loaded yet, retrying in 500ms...');
+                setTimeout(initEmailJS, 500);
+            }
+        }
+        initEmailJS();
+
+        // Initial data with all drivers
+        let drivers = [
+            {
+                driverName: "ROCKY",
+                status: "Active",
+                email: "driver2twoo@gmail.com",
+                threecx: "Driver2@shipday",
+                phone: "0639026491",
+                phoneModel: "Samsung S10",
+                serialNumber: "Afrihost",
+                gmailPassword: "Driver2@loop",
+                shipdayUsername: "Driver2@shipday",
+                shipdayPassword: "Driver2@loop",
+                notes: "",
+                tags: "Route1"
+            },
+            {
+                driverName: "Muhammed",
+                status: "Active",
+                email: "driver3threee@gmail.com",
+                threecx: "Driver3@shipday",
+                phone: "0639016929",
+                phoneModel: "Samsung S10",
+                serialNumber: "AFRIHOST (sticker added)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver3@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route2"
+            },
+            {
+                driverName: "Meshain",
+                status: "Active",
+                email: "driver4four@gmail.com",
+                threecx: "Driver4@Shipday",
+                phone: "0717568220",
+                phoneModel: "Redmi 13C",
+                serialNumber: "Afrihost (COVER GIVEN)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver4@Shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route3"
+            },
+            {
+                driverName: "Jordan",
+                status: "Active",
+                email: "driver5fivee@gmail.com",
+                threecx: "Driver5@shipday",
+                phone: "0639076807",
+                phoneModel: "Samsung S10",
+                serialNumber: "Afrihost",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver5@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route1"
+            },
+            {
+                driverName: "Sherwin",
+                status: "Active",
+                email: "driver6six@gmail.com",
+                threecx: "Driver6@shipday",
+                phone: "0686399529",
+                phoneModel: "Samsung S10e",
+                serialNumber: "Afrihost",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver6@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route2"
+            },
+            {
+                driverName: "Rinesh",
+                status: "Active",
+                email: "driver7seven@gmail.com",
+                threecx: "Driver7@shipday",
+                phone: "0712371402",
+                phoneModel: "N/A",
+                serialNumber: "Anusha collections",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver7@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route3"
+            },
+            {
+                driverName: "Adhil",
+                status: "Active",
+                email: "driver8eightt@gmail.com",
+                threecx: "Driver8@shipday",
+                phone: "0686347961",
+                phoneModel: "Samsung S10e",
+                serialNumber: "AFRIHOST (STICKER ADDED)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver8@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route1"
+            },
+            {
+                driverName: "Amith",
+                status: "Active",
+                email: "driver9ninee@gmail.com",
+                threecx: "Driver9@shipday",
+                phone: "0686260287",
+                phoneModel: "Samsung A32",
+                serialNumber: "Afrihost",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver9@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route2"
+            },
+            {
+                driverName: "Vuli",
+                status: "Active",
+                email: "driver10tenn@gmail.com",
+                threecx: "Driver10@shipday",
+                phone: "0639078910",
+                phoneModel: "Samsung Note 10 lite",
+                serialNumber: "Afrihost",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver10@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route3"
+            },
+            {
+                driverName: "Spare",
+                status: "Spare",
+                email: "driver11elevenn@gmail.com",
+                threecx: "Driver11@shipday",
+                phone: "0686219352",
+                phoneModel: "Samsung S10+",
+                serialNumber: "Afrihost (sticker added)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver11@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Backup"
+            },
+            {
+                driverName: "Spare",
+                status: "Spare",
+                email: "driver12twelve@gmail.com",
+                threecx: "Driver12@shipday",
+                phone: "0686097696",
+                phoneModel: "Samsung S10e",
+                serialNumber: "Afrihost (sticker added)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver12@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Backup"
+            },
+            {
+                driverName: "Sha rukh khan",
+                status: "Active",
+                email: "driver13thirteen@gmail.com",
+                threecx: "Driver13@shipday",
+                phone: "0686325129",
+                phoneModel: "Samsung A33 5G",
+                serialNumber: "AFRIHOST (STICKER ADDED)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver13@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route1"
+            },
+            {
+                driverName: "Kwanda",
+                status: "Active",
+                email: "driver14fourteen@gmail.com",
+                threecx: "Driver14@shipday",
+                phone: "0639019742",
+                phoneModel: "Samsung A92",
+                serialNumber: "Afrihost",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver14@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route2"
+            },
+            {
+                driverName: "Sfundo",
+                status: "Active",
+                email: "driver15fifteen@gmail.com",
+                threecx: "Driver15@shipday",
+                phone: "0686192821",
+                phoneModel: "Samsung A33 5G",
+                serialNumber: "Afrihost (In pricing phone)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver15@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route3"
+            },
+            {
+                driverName: "Khulekani",
+                status: "Active",
+                email: "driver16sixteen@gmail.com",
+                threecx: "Driver16@shipday",
+                phone: "0686365461",
+                phoneModel: "Redmi 13C",
+                serialNumber: "Afrihost (COVER GIVEN)",
+                gmailPassword: "Superb@787",
+                shipdayUsername: "Driver16@shipday",
+                shipdayPassword: "Superb@787",
+                notes: "",
+                tags: "Route1"
+            },
+            {
+                driverName: "Spare",
+                status: "Spare",
+                email: "driver17seventeen@gmail.com",
+                threecx: "Driver17@shipday",
+                phone: "0686204567",
+                phoneModel: "Samsung S10e",
+                serialNumber: "Mondlii phone",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver17@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Backup"
+            },
+            {
+                driverName: "Spare",
+                status: "Spare",
+                email: "driver18eighteen@gmail.com",
+                threecx: "Driver18@shipday",
+                phone: "0686221215",
+                phoneModel: "Redmi 13C",
+                serialNumber: "Afrihost (COVER GIVEN)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver18@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Backup"
+            },
+            {
+                driverName: "N/A",
+                status: "Active",
+                email: "driver19nineteen@gmail.com",
+                threecx: "Driver19@shipday",
+                phone: "0686427856",
+                phoneModel: "Redmi 13C",
+                serialNumber: "Afrihost (see note) (COVER GIVEN)",
+                gmailPassword: "Superb@786",
+                shipdayUsername: "Driver19@shipday",
+                shipdayPassword: "Superb@786",
+                notes: "",
+                tags: "Route2"
+            },
+            {
+                driverName: "Nkosinathi",
+                status: "Active",
+                email: "driver20twenty@gmail.com",
+                threecx: "Driver20@shipday",
+                phone: "0686208323",
+                phoneModel: "Redmi 13C",
+                serialNumber: "Afrihost (In Shannon phone)",
+                gmailPassword: "superb@786",
+                shipdayUsername: "Driver20@shipday",
+                shipdayPassword: "superb@786",
+                notes: "",
+                tags: "Route3"
+            }
+        ];
+        let editingIndex = -1;
+        let selectedDrivers = new Set();
+        let filteredDrivers = [];
+        let passwordsVisible = false;
+        let currentTheme = 'light';
+
+        // JSONBin.io Configuration
+        const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68bbdbe043b1c97be938aecf';
+        const JSONBIN_API_KEY = '$2a$10$bB1IBj9WSxtFv8ueIC2FVuD60I3VYAsTardsW0hv4AiIU.KY77exu';
+
+        // Load from JSONBin.io
+        async function loadFromJSONBin() {
+            try {
+                const response = await fetch(JSONBIN_URL, {
+                    method: 'GET',
+                    headers: {
+                        'X-Master-Key': JSONBIN_API_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.record && Array.isArray(result.record)) {
+                    drivers = result.record;
+                    showToast('☁️ Loaded data from cloud!', 'success');
+                    autoSave(); // backup to localStorage
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Cloud load failed:', error.message);
+                showToast('⚠️ Using local data', 'warning');
+            }
+            return false;
+        }
+
+        // Save to JSONBin.io
+        async function saveToJSONBin() {
+            try {
+                const response = await fetch(JSONBIN_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY,
+                        'X-Bin-Private': 'true'
+                    },
+                    body: JSON.stringify(drivers)
+                });
+
+                if (response.ok) {
+                    showToast('✅ Saved to cloud!', 'success');
+                    localStorage.setItem('lastCloudSync', new Date().toISOString());
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Save failed');
+                }
+            } catch (error) {
+                console.error('Save to cloud failed:', error);
+                showToast('❌ Cloud save failed', 'error');
+            }
+        }
+
+        // Send email alert via EmailJS (safe version)
+        async function sendDriverAlert(action, driverData) {
+            // Make sure emailjs is loaded
+            if (typeof emailjs === 'undefined') {
+                console.warn('EmailJS not available - skipping email alert');
+                return false;
+            }
+
+            try {
+                const templateParams = {
+                    to_email: 'finance1@superbhyper.co.za',
+                    from_email: 'alerts@superbhyper.co.za',
+                    action: action,
+                    driverName: driverData.driverName,
+                    status: driverData.status,
+                    email: driverData.email,
+                    phone: driverData.phone,
+                    phoneModel: driverData.phoneModel,
+                    serialNumber: driverData.serialNumber,
+                    timestamp: new Date().toLocaleString()
+                };
+
+                await emailjs.send('service_4qk5l4o', 'template_1xqy7zr', templateParams);
+                console.log('✅ Email alert sent');
+                return true;
+            } catch (error) {
+                console.error('📧 Email alert failed:', error);
+                return false;
+            }
+        }
+
+        // Initialize the application
+        async function initializeApp() {
+            loadSettings();
+
+            // Try loading from cloud first
+            const loadedFromCloud = await loadFromJSONBin();
+
+            // If cloud failed, try localStorage
+            if (!loadedFromCloud) {
+                const savedData = localStorage.getItem('driversData');
+                if (savedData) {
+                    try {
+                        drivers = JSON.parse(savedData);
+                        showToast('💾 Loaded from local storage', 'info');
+                    } catch (e) {
+                        console.error('LocalStorage parse error:', e);
+                    }
+                }
+            }
+
+            updateStats();
+            applyFilters();
+            setupEventListeners();
+
+            // Auto-save every 30s
+            if (document.getElementById('autoSaveEnabled').checked) {
+                setInterval(() => {
+                    autoSave();
+                }, 30000);
+            }
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 300));
+        }
+
+        // Debounce for search
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Update stats
+        function updateStats() {
+            const total = drivers.length;
+            const active = drivers.filter(d => d.status === 'Active').length;
+            const samsung = drivers.filter(d => d.phoneModel.toLowerCase().includes('samsung')).length;
+            const redmi = drivers.filter(d => d.phoneModel.toLowerCase().includes('redmi')).length;
+            document.getElementById('totalDrivers').textContent = total;
+            document.getElementById('activeDrivers').textContent = active;
+            document.getElementById('samsungDevices').textContent = samsung;
+            document.getElementById('redmiDevices').textContent = redmi;
+        }
+
+        // Theme toggle
+        function toggleTheme() {
+            const body = document.body;
+            const themeButton = document.querySelector('.theme-toggle');
+            if (body.classList.contains('dark-mode')) {
+                body.classList.remove('dark-mode');
+                themeButton.innerHTML = '🌙 Dark Mode';
+                currentTheme = 'light';
+            } else {
+                body.classList.add('dark-mode');
+                themeButton.innerHTML = '☀️ Light Mode';
+                currentTheme = 'dark';
+            }
+            localStorage.setItem('theme', currentTheme);
+        }
+
+        // Load settings
+        function loadSettings() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') toggleTheme();
+            
+            const autoSave = localStorage.getItem('autoSaveEnabled');
+            if (autoSave !== null) {
+                document.getElementById('autoSaveEnabled').checked = autoSave === 'true';
+            }
+            
+            const passwordsHidden = localStorage.getItem('passwordsHiddenByDefault');
+            if (passwordsHidden !== null) {
+                document.getElementById('passwordsHiddenByDefault').checked = passwordsHidden === 'true';
+                passwordsVisible = passwordsHidden === 'false';
+            }
+        }
+
+        // Auto-save to localStorage
+        function autoSave() {
+            if (document.getElementById('autoSaveEnabled').checked) {
+                localStorage.setItem('driversData', JSON.stringify(drivers));
+                localStorage.setItem('lastSaved', new Date().toISOString());
+            }
+        }
+
+        // Toggle add/edit form
+        function toggleAddForm() {
+            const formSection = document.getElementById('driverFormSection');
+            const isVisible = formSection.style.display !== 'none';
+            if (isVisible) {
+                formSection.style.display = 'none';
+                if (editingIndex >= 0) cancelEdit();
+            } else {
+                formSection.style.display = 'block';
+                formSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const modelFilter = document.getElementById('modelFilter').value;
+            
+            filteredDrivers = drivers.filter(driver => {
+                const matchesSearch = !searchTerm || 
+                    driver.driverName.toLowerCase().includes(searchTerm) ||
+                    driver.email.toLowerCase().includes(searchTerm) ||
+                    driver.phone.includes(searchTerm) ||
+                    driver.threecx.toLowerCase().includes(searchTerm);
+                const matchesStatus = !statusFilter || driver.status === statusFilter;
+                const matchesModel = !modelFilter || driver.phoneModel.toLowerCase().includes(modelFilter.toLowerCase());
+                return matchesSearch && matchesStatus && matchesModel;
+            });
+            
+            renderTable();
+            renderMobileView();
+        }
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('modelFilter').value = '';
+            applyFilters();
+        }
+
+        // Render desktop table
+        function renderTable() {
+            const container = document.getElementById('tableContainer');
+            if (filteredDrivers.length === 0) {
+                container.innerHTML = '<div class="no-results"><p>No drivers match your current filters. Try adjusting your search criteria.</p></div>';
+                return;
+            }
+            
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" onchange="toggleSelectAll(this.checked)"></th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Email</th>
+                            <th>3CX</th>
+                            <th>Phone</th>
+                            <th>Model</th>
+                            <th>Serial/Provider</th>
+                            <th>Gmail Pass</th>
+                            <th>Shipday User</th>
+                            <th>Shipday Pass</th>
+                            <th>Tags</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredDrivers.map((driver, index) => {
+                            const originalIndex = drivers.indexOf(driver);
+                            const isSelected = selectedDrivers.has(originalIndex);
+                            const isEditing = editingIndex === originalIndex;
+                            return `
+                                <tr class="${isEditing ? 'editing-row' : ''} ${isSelected ? 'selected-row' : ''}">
+                                    <td><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleDriverSelection(${originalIndex}, this.checked)"></td>
+                                    <td><strong>${driver.driverName}</strong></td>
+                                    <td><span class="status-badge status-${driver.status.toLowerCase()}">${driver.status}</span></td>
+                                    <td>${driver.email}</td>
+                                    <td>${driver.threecx}</td>
+                                    <td>${driver.phone}</td>
+                                    <td>${driver.phoneModel}</td>
+                                    <td><span class="password-field">${driver.serialNumber}</span></td>
+                                    <td class="password-cell"><span class="password-field ${passwordsVisible ? '' : 'hidden'}" onclick="toggleSinglePassword(this)">${driver.gmailPassword}</span></td>
+                                    <td>${driver.shipdayUsername}</td>
+                                    <td class="password-cell"><span class="password-field ${passwordsVisible ? '' : 'hidden'}" onclick="toggleSinglePassword(this)">${driver.shipdayPassword}</span></td>
+                                    <td>${driver.tags || '-'}</td>
+                                    <td>
+                                        <div class="actions">
+                                            <button class="btn btn-warning btn-sm" onclick="editDriver(${originalIndex})" ${isEditing ? 'disabled' : ''}>${isEditing ? '✏️ Editing' : '✏️'}</button>
+                                            <button class="btn btn-secondary btn-sm" onclick="duplicateDriver(${originalIndex})">📋</button>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteDriver(${originalIndex})" ${isEditing ? 'disabled' : ''}>🗑️</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = table;
+            updateSelectionDisplay();
+        }
+
+        // Render mobile view
+        function renderMobileView() {
+            const container = document.getElementById('mobileContainer');
+            if (filteredDrivers.length === 0) {
+                container.innerHTML = '<div class="no-results"><p>No drivers found matching your criteria.</p></div>';
+                return;
+            }
+            
+            const cards = filteredDrivers.map(driver => {
+                const originalIndex = drivers.indexOf(driver);
+                const isSelected = selectedDrivers.has(originalIndex);
+                const isEditing = editingIndex === originalIndex;
+                return `
+                    <div class="driver-card ${isEditing ? 'editing-row' : ''} ${isSelected ? 'selected-row' : ''}">
+                        <div class="driver-card-header">
+                            <div class="driver-name">${driver.driverName}</div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleDriverSelection(${originalIndex}, this.checked)">
+                                <span class="status-badge status-${driver.status.toLowerCase()}">${driver.status}</span>
+                            </div>
+                        </div>
+                        <div class="driver-info">
+                            <div class="info-item"><span class="info-label">Email</span><span class="info-value">${driver.email}</span></div>
+                            <div class="info-item"><span class="info-label">Phone</span><span class="info-value">${driver.phone}</span></div>
+                            <div class="info-item"><span class="info-label">3CX</span><span class="info-value">${driver.threecx}</span></div>
+                            <div class="info-item"><span class="info-label">Model</span><span class="info-value">${driver.phoneModel}</span></div>
+                            <div class="info-item"><span class="info-label">Gmail Password</span><span class="info-value password-field ${passwordsVisible ? '' : 'hidden'}" onclick="toggleSinglePassword(this)">${driver.gmailPassword}</span></div>
+                            <div class="info-item"><span class="info-label">Shipday Password</span><span class="info-value password-field ${passwordsVisible ? '' : 'hidden'}" onclick="toggleSinglePassword(this)">${driver.shipdayPassword}</span></div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-warning btn-sm" onclick="editDriver(${originalIndex})" ${isEditing ? 'disabled' : ''}>${isEditing ? '✏️ Editing' : '✏️ Edit'}</button>
+                            <button class="btn btn-secondary btn-sm" onclick="duplicateDriver(${originalIndex})">📋 Copy</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteDriver(${originalIndex})" ${isEditing ? 'disabled' : ''}>🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.innerHTML = cards;
+            updateSelectionDisplay();
+        }
+
+        // Toggle password visibility
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = field.nextElementSibling;
+            if (field.type === 'password') {
+                field.type = 'text';
+                button.innerHTML = '🙈';
+            } else {
+                field.type = 'password';
+                button.innerHTML = '👁️';
+            }
+        }
+
+        // Toggle all passwords
+        function togglePasswordsVisibility() {
+            passwordsVisible = !passwordsVisible;
+            document.querySelectorAll('.password-field').forEach(field => {
+                field.classList.toggle('hidden', !passwordsVisible);
+            });
+        }
+
+        // Toggle single password
+        function toggleSinglePassword(element) {
+            element.classList.toggle('hidden');
+        }
+
+        // Selection functions
+        function toggleSelectAll(checked) {
+            if (checked) {
+                filteredDrivers.forEach(driver => {
+                    selectedDrivers.add(drivers.indexOf(driver));
+                });
+            } else {
+                selectedDrivers.clear();
+            }
+            renderTable();
+            renderMobileView();
+        }
+
+        function toggleDriverSelection(index, checked) {
+            if (checked) selectedDrivers.add(index);
+            else selectedDrivers.delete(index);
+            updateSelectionDisplay();
+        }
+
+        function updateSelectionDisplay() {
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            if (selectedDrivers.size > 0) {
+                bulkActions.style.display = 'flex';
+                selectedCount.textContent = `${selectedDrivers.size} selected`;
+            } else {
+                bulkActions.style.display = 'none';
+            }
+        }
+
+        function clearSelection() {
+            selectedDrivers.clear();
+            renderTable();
+            renderMobileView();
+        }
+
+        // Edit driver
+        function editDriver(index) {
+            const driver = drivers[index];
+            editingIndex = index;
+            document.getElementById('driverFormSection').style.display = 'block';
+            
+            document.getElementById('driverName').value = driver.driverName;
+            document.getElementById('status').value = driver.status;
+            document.getElementById('email').value = driver.email;
+            document.getElementById('threecx').value = driver.threecx;
+            document.getElementById('phone').value = driver.phone;
+            document.getElementById('phoneModel').value = driver.phoneModel;
+            document.getElementById('serialNumber').value = driver.serialNumber;
+            document.getElementById('gmailPassword').value = driver.gmailPassword;
+            document.getElementById('shipdayUsername').value = driver.shipdayUsername;
+            document.getElementById('shipdayPassword').value = driver.shipdayPassword;
+            document.getElementById('notes').value = driver.notes || '';
+            document.getElementById('tags').value = driver.tags || '';
+            
+            document.getElementById('formTitle').textContent = 'Edit Driver';
+            document.getElementById('editingNotice').style.display = 'block';
+            document.getElementById('driverFormSection').classList.add('editing-mode');
+            document.getElementById('submitBtn').textContent = 'Update Driver';
+            document.getElementById('cancelEdit').style.display = 'inline-block';
+            document.getElementById('duplicateBtn').style.display = 'inline-block';
+            
+            renderTable();
+            renderMobileView();
+            document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Duplicate driver
+        function duplicateDriver(index) {
+            const driver = drivers[index || editingIndex];
+            if (!driver) return;
+            
+            document.getElementById('driverFormSection').style.display = 'block';
+            document.getElementById('driverName').value = driver.driverName + ' (Copy)';
+            document.getElementById('status').value = driver.status;
+            document.getElementById('email').value = '';
+            document.getElementById('threecx').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('phoneModel').value = driver.phoneModel;
+            document.getElementById('serialNumber').value = driver.serialNumber;
+            document.getElementById('gmailPassword').value = driver.gmailPassword;
+            document.getElementById('shipdayUsername').value = '';
+            document.getElementById('shipdayPassword').value = driver.shipdayPassword;
+            document.getElementById('notes').value = driver.notes || '';
+            document.getElementById('tags').value = driver.tags || '';
+            
+            document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
+            showToast('Driver duplicated! Fill in unique info.', 'warning');
+        }
+
+        // Delete driver
+        async function deleteDriver(index) {
+            if (!confirm('Delete this driver? This cannot be undone.')) return;
+            
+            const deletedDriver = { ...drivers[index] };
+            drivers.splice(index, 1);
+            selectedDrivers.delete(index);
+            
+            const newSelected = new Set();
+            selectedDrivers.forEach(i => {
+                if (i > index) newSelected.add(i - 1);
+                else if (i < index) newSelected.add(i);
+            });
+            selectedDrivers = newSelected;
+            
+            await sendDriverAlert('Driver Deleted', deletedDriver);
+            await saveToJSONBin();
+            
+            updateStats();
+            applyFilters();
+            autoSave();
+            showToast('Driver deleted', 'success');
+        }
+
+        // Cancel edit
+        function cancelEdit() {
+            editingIndex = -1;
+            document.getElementById('driverForm').reset();
+            document.getElementById('formTitle').textContent = 'Add New Driver';
+            document.getElementById('editingNotice').style.display = 'none';
+            document.getElementById('driverFormSection').classList.remove('editing-mode');
+            document.getElementById('submitBtn').textContent = 'Add Driver';
+            document.getElementById('cancelEdit').style.display = 'none';
+            document.getElementById('duplicateBtn').style.display = 'none';
+            renderTable();
+            renderMobileView();
+        }
+
+        // Clear form
+        function clearForm() {
+            if (editingIndex >= 0 && !confirm('Clear form and cancel edit?')) return;
+            cancelEdit();
+        }
+
+        // Form submission
+        document.getElementById('driverForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const driverData = {
+                driverName: formData.get('driverName'),
+                status: formData.get('status'),
+                email: formData.get('email'),
+                threecx: formData.get('threecx'),
+                phone: formData.get('phone'),
+                phoneModel: formData.get('phoneModel'),
+                serialNumber: formData.get('serialNumber'),
+                gmailPassword: formData.get('gmailPassword'),
+                shipdayUsername: formData.get('shipdayUsername'),
+                shipdayPassword: formData.get('shipdayPassword'),
+                notes: formData.get('notes') || '',
+                tags: formData.get('tags') || ''
+            };
+
+            let actionType = '';
+            if (editingIndex >= 0) {
+                drivers[editingIndex] = driverData;
+                actionType = 'Driver Updated';
+                showToast('Updated successfully!', 'success');
+                cancelEdit();
+            } else {
+                drivers.push(driverData);
+                actionType = 'New Driver Added';
+                showToast('Added successfully!', 'success');
+                this.reset();
+            }
+
+            await sendDriverAlert(actionType, driverData);
+            await saveToJSONBin();
+
+            updateStats();
+            applyFilters();
+            autoSave();
+        });
+
+        // Cancel edit button
+        document.getElementById('cancelEdit').addEventListener('click', cancelEdit);
+
+        // Bulk edit
+        function bulkEdit() {
+            if (selectedDrivers.size === 0) {
+                showToast('Select drivers to edit', 'warning');
+                return;
+            }
+            document.getElementById('bulkEditCount').textContent = selectedDrivers.size;
+            openModal('bulkEditModal');
+        }
+
+        async function applyBulkEdit() {
+            const updates = {};
+            if (document.getElementById('bulkUpdateStatus').checked) updates.status = document.getElementById('bulkStatus').value;
+            if (document.getElementById('bulkUpdateGmailPassword').checked) updates.gmailPassword = document.getElementById('bulkGmailPassword').value;
+            if (document.getElementById('bulkUpdateShipdayPassword').checked) updates.shipdayPassword = document.getElementById('bulkShipdayPassword').value;
+            if (document.getElementById('bulkUpdateTags').checked) updates.addTags = document.getElementById('bulkTags').value;
+
+            let updatedCount = 0;
+            const sampleDriver = { ...drivers[Array.from(selectedDrivers)[0]] };
+
+            for (const index of selectedDrivers) {
+                const driver = drivers[index];
+                for (const key in updates) {
+                    if (key === 'addTags') {
+                        const existing = driver.tags ? driver.tags.split(',').map(t => t.trim()) : [];
+                        const adding = updates.addTags.split(',').map(t => t.trim());
+                        driver.tags = [...new Set([...existing, ...adding])].join(', ');
+                    } else {
+                        driver[key] = updates[key];
+                    }
+                }
+                updatedCount++;
+            }
+
+            await sendDriverAlert(`Bulk Update: ${updatedCount} drivers`, sampleDriver);
+            await saveToJSONBin();
+
+            closeModal('bulkEditModal');
+            clearSelection();
+            updateStats();
+            applyFilters();
+            autoSave();
+            showToast(`${updatedCount} drivers updated!`, 'success');
+        }
+
+        // Bulk delete
+        async function bulkDelete() {
+            if (selectedDrivers.size === 0) {
+                showToast('Select drivers to delete', 'warning');
+                return;
+            }
+            if (!confirm(`Delete ${selectedDrivers.size} drivers? Cannot undo.`)) return;
+
+            const firstDriver = { ...drivers[Array.from(selectedDrivers)[0]] };
+            const sortedIndices = Array.from(selectedDrivers).sort((a, b) => b - a);
+            sortedIndices.forEach(index => drivers.splice(index, 1));
+            selectedDrivers.clear();
+
+            await sendDriverAlert(`Bulk Delete: ${sortedIndices.length} drivers`, firstDriver);
+            await saveToJSONBin();
+
+            updateStats();
+            applyFilters();
+            autoSave();
+            showToast(`${sortedIndices.length} drivers deleted`, 'success');
+        }
+
+        // Import/export functions
+        function exportCSV() {
+            const maskPasswords = document.getElementById('maskPasswords').checked;
+            const headers = ['Name', 'Status', 'Email', '3CX', 'Phone', 'Model', 'Serial', 'Gmail Password', 'Shipday User', 'Shipday Password', 'Notes', 'Tags'];
+            const csvContent = [
+                headers.join(','),
+                ...drivers.map(driver => [
+                    `"${driver.driverName}"`,
+                    `"${driver.status}"`,
+                    `"${driver.email}"`,
+                    `"${driver.threecx}"`,
+                    `"${driver.phone}"`,
+                    `"${driver.phoneModel}"`,
+                    `"${driver.serialNumber}"`,
+                    maskPasswords ? '***' : `"${driver.gmailPassword}"`,
+                    `"${driver.shipdayUsername}"`,
+                    maskPasswords ? '***' : `"${driver.shipdayPassword}"`,
+                    `"${driver.notes || ''}"`,
+                    `"${driver.tags || ''}"`
+                ].join('\n'))
+            ].join('\n');
+            downloadFile('drivers.csv', csvContent, 'text/csv');
+            showToast('CSV exported!', 'success');
+        }
+
+        function exportJSON() {
+            const maskPasswords = document.getElementById('maskPasswords').checked;
+            const exportData = drivers.map(driver => {
+                const copy = { ...driver };
+                if (maskPasswords) {
+                    copy.gmailPassword = '***';
+                    copy.shipdayPassword = '***';
+                }
+                return copy;
+            });
+            downloadFile('drivers.json', JSON.stringify(exportData, null, 2), 'application/json');
+            showToast('JSON exported!', 'success');
+        }
+
+        function createBackup() {
+            const backup = {
+                drivers: drivers,
+                timestamp: new Date().toISOString(),
+                version: '2.0'
+            };
+            downloadFile(`backup_${new Date().toISOString().split('T')[0]}.json`, JSON.stringify(backup, null, 2), 'application/json');
+            showToast('Backup created!', 'success');
+        }
+
+        function downloadFile(filename, content, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const lines = e.target.result.split('\n');
+                    let imported = 0;
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+                        if (values.length >= 8) {
+                            drivers.push({
+                                driverName: values[0] || 'N/A',
+                                status: values[1] || 'Active',
+                                email: values[2] || '',
+                                threecx: values[3] || '',
+                                phone: values[4] || '',
+                                phoneModel: values[5] || '',
+                                serialNumber: values[6] || '',
+                                gmailPassword: values[7] || '',
+                                shipdayUsername: values[8] || '',
+                                shipdayPassword: values[9] || '',
+                                notes: values[10] || '',
+                                tags: values[11] || ''
+                            });
+                            imported++;
+                        }
+                    }
+                    if (imported > 0) {
+                        await sendDriverAlert(`CSV Import: ${imported} drivers`, drivers[drivers.length - 1]);
+                        await saveToJSONBin();
+                    }
+                    updateStats();
+                    applyFilters();
+                    autoSave();
+                    closeModal('importExportModal');
+                    showToast(`${imported} drivers imported!`, 'success');
+                } catch (error) {
+                    showToast('Import failed', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function restoreBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    if (backup.drivers && Array.isArray(backup.drivers)) {
+                        if (confirm('Replace all data? Cannot undo.')) {
+                            const oldCount = drivers.length;
+                            drivers = backup.drivers;
+                            selectedDrivers.clear();
+                            editingIndex = -1;
+                            await sendDriverAlert(`Backup Restore: ${drivers.length} drivers (was ${oldCount})`, drivers[0] || {});
+                            await saveToJSONBin();
+                            updateStats();
+                            applyFilters();
+                            autoSave();
+                            closeModal('importExportModal');
+                            showToast('Backup restored!', 'success');
+                        }
+                    }
+                } catch (error) {
+                    showToast('Invalid backup', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Modals
+        function openModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openImportExportModal() { openModal('importExportModal'); }
+        function openSettingsModal() { openModal('settingsModal'); }
+
+        // Clear all data
+        async function clearAllData() {
+            if (!confirm('Clear ALL data? Cannot undo.')) return;
+            const oldCount = drivers.length;
+            drivers = [];
+            selectedDrivers.clear();
+            editingIndex = -1;
+            await sendDriverAlert(`Data Cleared: ${oldCount} drivers removed`, {driverName: 'System', status: 'Cleared', email: 'system', phone: 'N/A', phoneModel: 'N/A', serialNumber: 'N/A'});
+            await saveToJSONBin();
+            updateStats();
+            applyFilters();
+            localStorage.removeItem('driversData');
+            closeModal('settingsModal');
+            showToast('All data cleared', 'warning');
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toastMessage');
+            msg.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Close modals on outside click
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) e.target.style.display = 'none';
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+                if (editingIndex >= 0) cancelEdit();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveToJSONBin();
+            }
+        });
+    </script>
+</body>
+</html>
