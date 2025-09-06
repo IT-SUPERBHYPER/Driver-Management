@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Driver Phone Manager</title>
-    <!-- ✅ EmailJS SDK - MUST be in head -->
+    <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/emailjs.min.js"></script>
     <style>
         * {
@@ -926,18 +926,6 @@
         <span id="toastMessage"></span>
     </div>
     <script>
-        // Safely initialize EmailJS with retry logic
-        function initEmailJS() {
-            if (typeof emailjs !== 'undefined') {
-                emailjs.init("Z3Si2PM1lDLbSTUz5");
-                console.log('✅ EmailJS initialized');
-            } else {
-                console.warn('EmailJS not loaded yet, retrying in 500ms...');
-                setTimeout(initEmailJS, 500);
-            }
-        }
-        initEmailJS();
-
         // Initial data with all drivers
         let drivers = [
             {
@@ -1271,10 +1259,40 @@
             }
         }
 
+        // Initialize EmailJS with timeout protection
+        let emailJSInitialized = false;
+        let emailJSInitAttempts = 0;
+        const MAX_INIT_ATTEMPTS = 20; // 20 attempts * 500ms = 10 seconds max
+
+        function initEmailJS() {
+            if (emailJSInitialized) return;
+            
+            if (typeof emailjs !== 'undefined') {
+                try {
+                    emailjs.init("Z3Si2PM1lDLbSTUz5");
+                    emailJSInitialized = true;
+                    console.log('✅ EmailJS initialized successfully');
+                    showToast('📧 Email alerts ready', 'info');
+                } catch (error) {
+                    console.error('EmailJS init error:', error);
+                    showToast('❌ Email service failed to initialize', 'error');
+                }
+            } else {
+                emailJSInitAttempts++;
+                if (emailJSInitAttempts < MAX_INIT_ATTEMPTS) {
+                    console.warn(`EmailJS not loaded yet (attempt ${emailJSInitAttempts}/${MAX_INIT_ATTEMPTS}), retrying in 500ms...`);
+                    setTimeout(initEmailJS, 500);
+                } else {
+                    console.error('❌ EmailJS failed to load after maximum attempts');
+                    showToast('⚠️ Email alerts unavailable', 'warning');
+                }
+            }
+        }
+
         // Send email alert via EmailJS (safe version)
         async function sendDriverAlert(action, driverData) {
-            // Make sure emailjs is loaded
-            if (typeof emailjs === 'undefined') {
+            // Only attempt to send if EmailJS is initialized
+            if (!emailJSInitialized) {
                 console.warn('EmailJS not available - skipping email alert');
                 return false;
             }
@@ -1301,6 +1319,9 @@
                 return false;
             }
         }
+
+        // Start EmailJS initialization
+        initEmailJS();
 
         // Initialize the application
         async function initializeApp() {
