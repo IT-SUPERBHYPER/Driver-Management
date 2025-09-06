@@ -1257,9 +1257,9 @@
             }
         }
 
-        // Send email alert via Google Apps Script
+        // Send email alert via Google Apps Script (CORS-safe)
         async function sendDriverAlert(action, driverData) {
-            const webhookUrl = 'https://script.google.com/macros/s/AKfycbzRZb4Jy5i9PdB5AC0XUWX27IXt5hmlADbLeb_tpIpc0TL3OjvK209x1kkJSqH_QItv/exec';
+            const webhookUrl = 'https://script.google.com/macros/s/AKfycbzhu5P5u8yzn5vvOlNOJ0oUcOGYYTv7FT47vYQO_Bx6UPGDR2S-831688Osq546rfVA/exec';
 
             try {
                 const response = await fetch(webhookUrl, {
