@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Driver Phone Manager</title>
-    <!-- EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/emailjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1259,69 +1257,39 @@
             }
         }
 
-        // Initialize EmailJS with timeout protection
-        let emailJSInitialized = false;
-        let emailJSInitAttempts = 0;
-        const MAX_INIT_ATTEMPTS = 20; // 20 attempts * 500ms = 10 seconds max
-
-        function initEmailJS() {
-            if (emailJSInitialized) return;
-            
-            if (typeof emailjs !== 'undefined') {
-                try {
-                    emailjs.init("Z3Si2PM1lDLbSTUz5");
-                    emailJSInitialized = true;
-                    console.log('✅ EmailJS initialized successfully');
-                    showToast('📧 Email alerts ready', 'info');
-                } catch (error) {
-                    console.error('EmailJS init error:', error);
-                    showToast('❌ Email service failed to initialize', 'error');
-                }
-            } else {
-                emailJSInitAttempts++;
-                if (emailJSInitAttempts < MAX_INIT_ATTEMPTS) {
-                    console.warn(`EmailJS not loaded yet (attempt ${emailJSInitAttempts}/${MAX_INIT_ATTEMPTS}), retrying in 500ms...`);
-                    setTimeout(initEmailJS, 500);
-                } else {
-                    console.error('❌ EmailJS failed to load after maximum attempts');
-                    showToast('⚠️ Email alerts unavailable', 'warning');
-                }
-            }
-        }
-
-        // Send email alert via EmailJS (safe version)
+        // Send email alert via Google Apps Script
         async function sendDriverAlert(action, driverData) {
-            // Only attempt to send if EmailJS is initialized
-            if (!emailJSInitialized) {
-                console.warn('EmailJS not available - skipping email alert');
-                return false;
-            }
+            const webhookUrl = 'https://script.google.com/macros/s/AKfycbzRZb4Jy5i9PdB5AC0XUWX27IXt5hmlADbLeb_tpIpc0TL3OjvK209x1kkJSqH_QItv/exec';
 
             try {
-                const templateParams = {
-                    to_email: 'finance1@superbhyper.co.za',
-                    from_email: 'alerts@superbhyper.co.za',
-                    action: action,
-                    driverName: driverData.driverName,
-                    status: driverData.status,
-                    email: driverData.email,
-                    phone: driverData.phone,
-                    phoneModel: driverData.phoneModel,
-                    serialNumber: driverData.serialNumber,
-                    timestamp: new Date().toLocaleString()
-                };
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        driverName: driverData.driverName,
+                        status: driverData.status,
+                        email: driverData.email,
+                        phone: driverData.phone,
+                        phoneModel: driverData.phoneModel,
+                        serialNumber: driverData.serialNumber
+                    })
+                });
 
-                await emailjs.send('service_4qk5l4o', 'template_1xqy7zr', templateParams);
-                console.log('✅ Email alert sent');
-                return true;
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Email alerts sent successfully');
+                    showToast('📧 Notifications sent to team', 'info');
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
             } catch (error) {
-                console.error('📧 Email alert failed:', error);
-                return false;
+                console.error('❌ Email alert failed:', error);
+                showToast('⚠️ Notification failed to send', 'warning');
             }
         }
-
-        // Start EmailJS initialization
-        initEmailJS();
 
         // Initialize the application
         async function initializeApp() {
@@ -1703,6 +1671,7 @@
             });
             selectedDrivers = newSelected;
             
+            // Send email alert
             await sendDriverAlert('Driver Deleted', deletedDriver);
             await saveToJSONBin();
             
@@ -1764,6 +1733,7 @@
                 this.reset();
             }
 
+            // Send email alert
             await sendDriverAlert(actionType, driverData);
             await saveToJSONBin();
 
@@ -1809,6 +1779,7 @@
                 updatedCount++;
             }
 
+            // Send email alert
             await sendDriverAlert(`Bulk Update: ${updatedCount} drivers`, sampleDriver);
             await saveToJSONBin();
 
@@ -1833,6 +1804,7 @@
             sortedIndices.forEach(index => drivers.splice(index, 1));
             selectedDrivers.clear();
 
+            // Send email alert
             await sendDriverAlert(`Bulk Delete: ${sortedIndices.length} drivers`, firstDriver);
             await saveToJSONBin();
 
