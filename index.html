@@ -255,7 +255,7 @@
             transition: all 0.3s ease;
             background: var(--light-color);
         }
-        body.dark-mode .form-group input, 
+        body.dark-mode .form-group input,
         body.dark-mode .form-group select {
             background: #34495e;
             color: var(--dark-color);
@@ -1198,10 +1198,55 @@
         let filteredDrivers = [];
         let passwordsVisible = false;
         let currentTheme = 'light';
-
         // JSONBin.io Configuration
         const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/68bbdbe043b1c97be938aecf';
         const JSONBIN_API_KEY = '$2a$10$bB1IBj9WSxtFv8ueIC2FVuD60I3VYAsTardsW0hv4AiIU.KY77exu';
+        // Send email alert via Google Apps Script (with CORS proxy)
+        async function sendDriverAlert(action, driverData) {
+            const webhookUrl = 'https://script.google.com/macros/s/AKfycbxgD3fSrWfYpJkIhusJfsKS8iDn6hgCOf3KANBmzfaK-fs42r21azSAt4JlccThBH_i/exec';
+            // --- Use a CORS proxy ---
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            const proxiedUrl = proxyUrl + webhookUrl;
+            // --- End CORS proxy setup ---
+
+            try {
+                const response = await fetch(proxiedUrl, { // Use the proxied URL
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 'X-Requested-With': 'XMLHttpRequest' // Sometimes helpful with proxies, but not always needed
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        driverName: driverData.driverName,
+                        status: driverData.status,
+                        email: driverData.email,
+                        phone: driverData.phone,
+                        phoneModel: driverData.phoneModel,
+                        serialNumber: driverData.serialNumber
+                    })
+                });
+
+                // Check if the response itself is okay (e.g., 200 OK)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`Proxy/Server Error (${response.status}):`, errorText);
+                    throw new Error(`Network response was not ok: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Email alerts sent successfully');
+                    showToast('📧 Notifications sent to team', 'info');
+                } else {
+                    throw new Error(result.error || 'Unknown error from Apps Script');
+                }
+            } catch (error) {
+                console.error('❌ Email alert failed:', error);
+                showToast(`⚠️ Notification failed: ${error.message}`, 'warning'); // Show more specific error
+            }
+        }
+
 
         // Load from JSONBin.io
         async function loadFromJSONBin() {
@@ -1212,11 +1257,9 @@
                         'X-Master-Key': JSONBIN_API_KEY
                     }
                 });
-
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-
                 const result = await response.json();
                 if (result.record && Array.isArray(result.record)) {
                     drivers = result.record;
@@ -1230,7 +1273,6 @@
             }
             return false;
         }
-
         // Save to JSONBin.io
         async function saveToJSONBin() {
             try {
@@ -1243,7 +1285,6 @@
                     },
                     body: JSON.stringify(drivers)
                 });
-
                 if (response.ok) {
                     showToast('✅ Saved to cloud!', 'success');
                     localStorage.setItem('lastCloudSync', new Date().toISOString());
@@ -1257,47 +1298,11 @@
             }
         }
 
-        // Send email alert via Google Apps Script (CORS-safe)
-        async function sendDriverAlert(action, driverData) {
-            const webhookUrl = 'https://script.google.com/macros/s/AKfycby7J52rJ8wdNktZuhVqAlv6QCHXi7m_E4sJDq16gqxhIRSKfPVtRBQq2T7yFl79Q_Qd/exec';
-
-            try {
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: action,
-                        driverName: driverData.driverName,
-                        status: driverData.status,
-                        email: driverData.email,
-                        phone: driverData.phone,
-                        phoneModel: driverData.phoneModel,
-                        serialNumber: driverData.serialNumber
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    console.log('✅ Email alerts sent successfully');
-                    showToast('📧 Notifications sent to team', 'info');
-                } else {
-                    throw new Error(result.error || 'Unknown error');
-                }
-            } catch (error) {
-                console.error('❌ Email alert failed:', error);
-                showToast('⚠️ Notification failed to send', 'warning');
-            }
-        }
-
         // Initialize the application
         async function initializeApp() {
             loadSettings();
-
             // Try loading from cloud first
             const loadedFromCloud = await loadFromJSONBin();
-
             // If cloud failed, try localStorage
             if (!loadedFromCloud) {
                 const savedData = localStorage.getItem('driversData');
@@ -1310,11 +1315,9 @@
                     }
                 }
             }
-
             updateStats();
             applyFilters();
             setupEventListeners();
-
             // Auto-save every 30s
             if (document.getElementById('autoSaveEnabled').checked) {
                 setInterval(() => {
@@ -1322,12 +1325,10 @@
                 }, 30000);
             }
         }
-
         // Event listeners
         function setupEventListeners() {
             document.getElementById('searchInput').addEventListener('input', debounce(applyFilters, 300));
         }
-
         // Debounce for search
         function debounce(func, wait) {
             let timeout;
@@ -1340,7 +1341,6 @@
                 timeout = setTimeout(later, wait);
             };
         }
-
         // Update stats
         function updateStats() {
             const total = drivers.length;
@@ -1352,7 +1352,6 @@
             document.getElementById('samsungDevices').textContent = samsung;
             document.getElementById('redmiDevices').textContent = redmi;
         }
-
         // Theme toggle
         function toggleTheme() {
             const body = document.body;
@@ -1368,24 +1367,20 @@
             }
             localStorage.setItem('theme', currentTheme);
         }
-
         // Load settings
         function loadSettings() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             if (savedTheme === 'dark') toggleTheme();
-            
             const autoSave = localStorage.getItem('autoSaveEnabled');
             if (autoSave !== null) {
                 document.getElementById('autoSaveEnabled').checked = autoSave === 'true';
             }
-            
             const passwordsHidden = localStorage.getItem('passwordsHiddenByDefault');
             if (passwordsHidden !== null) {
                 document.getElementById('passwordsHiddenByDefault').checked = passwordsHidden === 'true';
                 passwordsVisible = passwordsHidden === 'false';
             }
         }
-
         // Auto-save to localStorage
         function autoSave() {
             if (document.getElementById('autoSaveEnabled').checked) {
@@ -1393,7 +1388,6 @@
                 localStorage.setItem('lastSaved', new Date().toISOString());
             }
         }
-
         // Toggle add/edit form
         function toggleAddForm() {
             const formSection = document.getElementById('driverFormSection');
@@ -1406,15 +1400,13 @@
                 formSection.scrollIntoView({ behavior: 'smooth' });
             }
         }
-
         // Apply filters
         function applyFilters() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
             const modelFilter = document.getElementById('modelFilter').value;
-            
             filteredDrivers = drivers.filter(driver => {
-                const matchesSearch = !searchTerm || 
+                const matchesSearch = !searchTerm ||
                     driver.driverName.toLowerCase().includes(searchTerm) ||
                     driver.email.toLowerCase().includes(searchTerm) ||
                     driver.phone.includes(searchTerm) ||
@@ -1423,11 +1415,9 @@
                 const matchesModel = !modelFilter || driver.phoneModel.toLowerCase().includes(modelFilter.toLowerCase());
                 return matchesSearch && matchesStatus && matchesModel;
             });
-            
             renderTable();
             renderMobileView();
         }
-
         // Clear filters
         function clearFilters() {
             document.getElementById('searchInput').value = '';
@@ -1435,7 +1425,6 @@
             document.getElementById('modelFilter').value = '';
             applyFilters();
         }
-
         // Render desktop table
         function renderTable() {
             const container = document.getElementById('tableContainer');
@@ -1443,7 +1432,6 @@
                 container.innerHTML = '<div class="no-results"><p>No drivers match your current filters. Try adjusting your search criteria.</p></div>';
                 return;
             }
-            
             const table = `
                 <table>
                     <thead>
@@ -1498,7 +1486,6 @@
             container.innerHTML = table;
             updateSelectionDisplay();
         }
-
         // Render mobile view
         function renderMobileView() {
             const container = document.getElementById('mobileContainer');
@@ -1506,7 +1493,6 @@
                 container.innerHTML = '<div class="no-results"><p>No drivers found matching your criteria.</p></div>';
                 return;
             }
-            
             const cards = filteredDrivers.map(driver => {
                 const originalIndex = drivers.indexOf(driver);
                 const isSelected = selectedDrivers.has(originalIndex);
@@ -1539,7 +1525,6 @@
             container.innerHTML = cards;
             updateSelectionDisplay();
         }
-
         // Toggle password visibility
         function togglePassword(fieldId) {
             const field = document.getElementById(fieldId);
@@ -1552,7 +1537,6 @@
                 button.innerHTML = '👁️';
             }
         }
-
         // Toggle all passwords
         function togglePasswordsVisibility() {
             passwordsVisible = !passwordsVisible;
@@ -1560,12 +1544,10 @@
                 field.classList.toggle('hidden', !passwordsVisible);
             });
         }
-
         // Toggle single password
         function toggleSinglePassword(element) {
             element.classList.toggle('hidden');
         }
-
         // Selection functions
         function toggleSelectAll(checked) {
             if (checked) {
@@ -1578,13 +1560,11 @@
             renderTable();
             renderMobileView();
         }
-
         function toggleDriverSelection(index, checked) {
             if (checked) selectedDrivers.add(index);
             else selectedDrivers.delete(index);
             updateSelectionDisplay();
         }
-
         function updateSelectionDisplay() {
             const bulkActions = document.getElementById('bulkActions');
             const selectedCount = document.getElementById('selectedCount');
@@ -1595,19 +1575,16 @@
                 bulkActions.style.display = 'none';
             }
         }
-
         function clearSelection() {
             selectedDrivers.clear();
             renderTable();
             renderMobileView();
         }
-
         // Edit driver
         function editDriver(index) {
             const driver = drivers[index];
             editingIndex = index;
             document.getElementById('driverFormSection').style.display = 'block';
-            
             document.getElementById('driverName').value = driver.driverName;
             document.getElementById('status').value = driver.status;
             document.getElementById('email').value = driver.email;
@@ -1620,24 +1597,20 @@
             document.getElementById('shipdayPassword').value = driver.shipdayPassword;
             document.getElementById('notes').value = driver.notes || '';
             document.getElementById('tags').value = driver.tags || '';
-            
             document.getElementById('formTitle').textContent = 'Edit Driver';
             document.getElementById('editingNotice').style.display = 'block';
             document.getElementById('driverFormSection').classList.add('editing-mode');
             document.getElementById('submitBtn').textContent = 'Update Driver';
             document.getElementById('cancelEdit').style.display = 'inline-block';
             document.getElementById('duplicateBtn').style.display = 'inline-block';
-            
             renderTable();
             renderMobileView();
             document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
         }
-
         // Duplicate driver
         function duplicateDriver(index) {
             const driver = drivers[index || editingIndex];
             if (!driver) return;
-            
             document.getElementById('driverFormSection').style.display = 'block';
             document.getElementById('driverName').value = driver.driverName + ' (Copy)';
             document.getElementById('status').value = driver.status;
@@ -1651,36 +1624,29 @@
             document.getElementById('shipdayPassword').value = driver.shipdayPassword;
             document.getElementById('notes').value = driver.notes || '';
             document.getElementById('tags').value = driver.tags || '';
-            
             document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
             showToast('Driver duplicated! Fill in unique info.', 'warning');
         }
-
         // Delete driver
         async function deleteDriver(index) {
             if (!confirm('Delete this driver? This cannot be undone.')) return;
-            
             const deletedDriver = { ...drivers[index] };
             drivers.splice(index, 1);
             selectedDrivers.delete(index);
-            
             const newSelected = new Set();
             selectedDrivers.forEach(i => {
                 if (i > index) newSelected.add(i - 1);
                 else if (i < index) newSelected.add(i);
             });
             selectedDrivers = newSelected;
-            
             // Send email alert
             await sendDriverAlert('Driver Deleted', deletedDriver);
             await saveToJSONBin();
-            
             updateStats();
             applyFilters();
             autoSave();
             showToast('Driver deleted', 'success');
         }
-
         // Cancel edit
         function cancelEdit() {
             editingIndex = -1;
@@ -1694,13 +1660,11 @@
             renderTable();
             renderMobileView();
         }
-
         // Clear form
         function clearForm() {
             if (editingIndex >= 0 && !confirm('Clear form and cancel edit?')) return;
             cancelEdit();
         }
-
         // Form submission
         document.getElementById('driverForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1719,7 +1683,6 @@
                 notes: formData.get('notes') || '',
                 tags: formData.get('tags') || ''
             };
-
             let actionType = '';
             if (editingIndex >= 0) {
                 drivers[editingIndex] = driverData;
@@ -1732,19 +1695,15 @@
                 showToast('Added successfully!', 'success');
                 this.reset();
             }
-
             // Send email alert
             await sendDriverAlert(actionType, driverData);
             await saveToJSONBin();
-
             updateStats();
             applyFilters();
             autoSave();
         });
-
         // Cancel edit button
         document.getElementById('cancelEdit').addEventListener('click', cancelEdit);
-
         // Bulk edit
         function bulkEdit() {
             if (selectedDrivers.size === 0) {
@@ -1754,17 +1713,14 @@
             document.getElementById('bulkEditCount').textContent = selectedDrivers.size;
             openModal('bulkEditModal');
         }
-
         async function applyBulkEdit() {
             const updates = {};
             if (document.getElementById('bulkUpdateStatus').checked) updates.status = document.getElementById('bulkStatus').value;
             if (document.getElementById('bulkUpdateGmailPassword').checked) updates.gmailPassword = document.getElementById('bulkGmailPassword').value;
             if (document.getElementById('bulkUpdateShipdayPassword').checked) updates.shipdayPassword = document.getElementById('bulkShipdayPassword').value;
             if (document.getElementById('bulkUpdateTags').checked) updates.addTags = document.getElementById('bulkTags').value;
-
             let updatedCount = 0;
             const sampleDriver = { ...drivers[Array.from(selectedDrivers)[0]] };
-
             for (const index of selectedDrivers) {
                 const driver = drivers[index];
                 for (const key in updates) {
@@ -1778,11 +1734,9 @@
                 }
                 updatedCount++;
             }
-
             // Send email alert
             await sendDriverAlert(`Bulk Update: ${updatedCount} drivers`, sampleDriver);
             await saveToJSONBin();
-
             closeModal('bulkEditModal');
             clearSelection();
             updateStats();
@@ -1790,7 +1744,6 @@
             autoSave();
             showToast(`${updatedCount} drivers updated!`, 'success');
         }
-
         // Bulk delete
         async function bulkDelete() {
             if (selectedDrivers.size === 0) {
@@ -1798,22 +1751,18 @@
                 return;
             }
             if (!confirm(`Delete ${selectedDrivers.size} drivers? Cannot undo.`)) return;
-
             const firstDriver = { ...drivers[Array.from(selectedDrivers)[0]] };
             const sortedIndices = Array.from(selectedDrivers).sort((a, b) => b - a);
             sortedIndices.forEach(index => drivers.splice(index, 1));
             selectedDrivers.clear();
-
             // Send email alert
             await sendDriverAlert(`Bulk Delete: ${sortedIndices.length} drivers`, firstDriver);
             await saveToJSONBin();
-
             updateStats();
             applyFilters();
             autoSave();
             showToast(`${sortedIndices.length} drivers deleted`, 'success');
         }
-
         // Import/export functions
         function exportCSV() {
             const maskPasswords = document.getElementById('maskPasswords').checked;
@@ -1833,12 +1782,11 @@
                     maskPasswords ? '***' : `"${driver.shipdayPassword}"`,
                     `"${driver.notes || ''}"`,
                     `"${driver.tags || ''}"`
-                ].join('\n'))
-            ].join('\n');
+                ].join(',')).join('\n') // Fix 1: Use join(',') for the row, then join('\n') for rows
+            ].join('\n'); // Fix 2: Use join('\n') for the final CSV content
             downloadFile('drivers.csv', csvContent, 'text/csv');
             showToast('CSV exported!', 'success');
         }
-
         function exportJSON() {
             const maskPasswords = document.getElementById('maskPasswords').checked;
             const exportData = drivers.map(driver => {
@@ -1852,7 +1800,6 @@
             downloadFile('drivers.json', JSON.stringify(exportData, null, 2), 'application/json');
             showToast('JSON exported!', 'success');
         }
-
         function createBackup() {
             const backup = {
                 drivers: drivers,
@@ -1862,7 +1809,6 @@
             downloadFile(`backup_${new Date().toISOString().split('T')[0]}.json`, JSON.stringify(backup, null, 2), 'application/json');
             showToast('Backup created!', 'success');
         }
-
         function downloadFile(filename, content, mimeType) {
             const blob = new Blob([content], { type: mimeType });
             const url = URL.createObjectURL(blob);
@@ -1872,14 +1818,13 @@
             a.click();
             URL.revokeObjectURL(url);
         }
-
         function importCSV(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    const lines = e.target.result.split('\n');
+                    const lines = e.target.result.split('\n'); // Fix 3: Split by \n
                     let imported = 0;
                     for (let i = 1; i < lines.length; i++) {
                         const line = lines[i].trim();
@@ -1918,7 +1863,6 @@
             };
             reader.readAsText(file);
         }
-
         async function restoreBackup(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1947,13 +1891,11 @@
             };
             reader.readAsText(file);
         }
-
         // Modals
         function openModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openImportExportModal() { openModal('importExportModal'); }
         function openSettingsModal() { openModal('settingsModal'); }
-
         // Clear all data
         async function clearAllData() {
             if (!confirm('Clear ALL data? Cannot undo.')) return;
@@ -1969,7 +1911,6 @@
             closeModal('settingsModal');
             showToast('All data cleared', 'warning');
         }
-
         // Toast notifications
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
@@ -1979,15 +1920,12 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
-
         // Close modals on outside click
         window.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal')) e.target.style.display = 'none';
         });
-
         // Initialize on load
         document.addEventListener('DOMContentLoaded', initializeApp);
-
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
